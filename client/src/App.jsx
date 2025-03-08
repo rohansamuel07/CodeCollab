@@ -3,13 +3,17 @@ import Navbar from "./components/Navbar";
 import Login from "./components/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Editor from "./components/CodeEditor";
+import RoomJoin from "./components/RoomJoin";
+import CodeEditor from "./components/CodeEditor";
 
-function App() {
+export default function App() {
   return (
     <Router>
       <Navbar />
       <Routes>
+        <Route path="/" element={<RoomJoin />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/editor/:roomId" element={<CodeEditor />} />
         <Route
           path="/editor"
           element={
@@ -22,5 +26,3 @@ function App() {
     </Router>
   );
 }
-
-export default App;

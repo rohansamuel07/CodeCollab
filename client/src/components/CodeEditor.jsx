@@ -1,10 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
+import { io } from "socket.io-client";
+import { useParams } from "react-router-dom";
+
+const socket = io("http://localhost:5000", { autoConnect: false });
 
 export default function CodeEditor() {
+  const { roomId } = useParams();
   const [code, setCode] = useState("// Write your code here...");
   const [output, setOutput] = useState("");
   const [language, setLanguage] = useState("javascript");
+
+  useEffect(() => {
+    socket.connect();
+    socket.emit("joinRoom", roomId);
+
+    const handleCodeUpdate = (newCode) => {
+      setCode(newCode);
+    };
+
+    socket.on("codeUpdate", handleCodeUpdate);
+
+    return () => {
+      socket.off("codeUpdate", handleCodeUpdate);
+      socket.disconnect();
+    };
+  }, [roomId]);
+
+  const handleCodeChange = (newValue) => {
+    setCode(newValue);
+    socket.emit("codeChange", { roomId, code: newValue });
+  };
 
   const runCode = async () => {
     try {
@@ -26,8 +52,8 @@ export default function CodeEditor() {
       {/* Navbar */}
       <nav className="flex items-center justify-between px-6 py-3 bg-gray-800 shadow-lg">
         <h1 className="text-xl font-bold text-blue-400">Online Compiler</h1>
-        <div>
-          <label className="mr-2 font-medium">Language:</label>
+        <div className="flex items-center space-x-4">
+          <label className="font-medium">Language:</label>
           <select
             className="px-3 py-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={language}
@@ -51,7 +77,7 @@ export default function CodeEditor() {
             theme="vs-dark"
             language={language}
             value={code}
-            onChange={(newValue) => setCode(newValue)}
+            onChange={handleCodeChange}
             options={{
               fontSize: 14,
               minimap: { enabled: false },

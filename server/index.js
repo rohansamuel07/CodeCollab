@@ -1,22 +1,53 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-
-dotenv.config();
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const cors = require("cors");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173", // Change if needed
+    methods: ["GET", "POST"],
+  },
+});
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Sample Route
-app.get("/", (req, res) => {
-  res.send("Server is running...");
+const rooms = new Map(); // Stores active rooms and users
+
+io.on("connection", (socket) => {
+  console.log("✅ A user connected:", socket.id);
+
+  socket.on("joinRoom", (roomId) => {
+    socket.join(roomId);
+
+    if (!rooms.has(roomId)) {
+      rooms.set(roomId, new Set());
+    }
+
+    rooms.get(roomId).add(socket.id);
+    console.log(`📌 User ${socket.id} joined room: ${roomId}`);
+    console.log("🏠 Active rooms:", rooms);
+  });
+
+  socket.on("codeChange", ({ roomId, code }) => {
+    socket.to(roomId).emit("codeUpdate", code);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("❌ User disconnected:", socket.id);
+    for (const [roomId, users] of rooms) {
+      users.delete(socket.id);
+      if (users.size === 0) {
+        rooms.delete(roomId);
+      }
+    }
+    console.log("🏠 Updated rooms:", rooms);
+  });
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+server.listen(5000, () => {
+  console.log("🚀 Server is running on port 5000");
 });
