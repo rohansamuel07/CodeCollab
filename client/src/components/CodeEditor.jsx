@@ -33,6 +33,7 @@ export default function CodeEditor() {
   };
 
   const runCode = async () => {
+    setOutput("Running...");
     try {
       const response = await fetch("http://localhost:5000/run", {
         method: "POST",
@@ -43,7 +44,7 @@ export default function CodeEditor() {
       const data = await response.json();
       setOutput(data.output);
     } catch (error) {
-      setOutput("Error running code");
+      setOutput("Error executing code");
     }
   };
 
