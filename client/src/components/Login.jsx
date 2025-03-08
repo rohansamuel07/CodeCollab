@@ -1,35 +1,46 @@
-import React from "react";
 import { auth, googleProvider, githubProvider } from "../firebase";
 import { signInWithPopup } from "firebase/auth";
+import { FcGoogle } from "react-icons/fc";
+import { FaGithub } from "react-icons/fa";
 
-const Login = () => {
-  // Google Sign-in
-  const handleGoogleLogin = async () => {
+export default function Login() {
+  const handleLogin = async (provider) => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      console.log("Google User:", result.user);
+      await signInWithPopup(auth, provider);
+      console.log("Login Successful!");
     } catch (error) {
-      console.error("Google Login Error:", error);
-    }
-  };
-
-  // GitHub Sign-in
-  const handleGithubLogin = async () => {
-    try {
-      const result = await signInWithPopup(auth, githubProvider);
-      console.log("GitHub User:", result.user);
-    } catch (error) {
-      console.error("GitHub Login Error:", error);
+      console.error("Login Error:", error);
     }
   };
 
   return (
-    <div>
-      <h2>Login</h2>
-      <button onClick={handleGoogleLogin}>Sign in with Google</button>
-      <button onClick={handleGithubLogin}>Sign in with GitHub</button>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="bg-white shadow-lg rounded-2xl p-8 max-w-sm w-full text-center">
+        {/* App Name - Centered */}
+        <h1 className="text-3xl font-bold text-gray-800 mb-4">CodeCollab</h1>
+
+        <h2 className="text-xl font-semibold text-gray-700 mb-6">
+          Sign In to Continue
+        </h2>
+
+        {/* Google Login Button */}
+        <button
+          onClick={() => handleLogin(googleProvider)}
+          className="w-full flex items-center justify-center gap-3 bg-red-500 text-white py-2 rounded-full mb-4 hover:bg-red-600 transition"
+        >
+          <FcGoogle className="text-2xl" />
+          Sign in with Google
+        </button>
+
+        {/* GitHub Login Button */}
+        <button
+          onClick={() => handleLogin(githubProvider)}
+          className="w-full flex items-center justify-center gap-3 bg-gray-800 text-white py-2 rounded-full hover:bg-gray-900 transition"
+        >
+          <FaGithub className="text-2xl" />
+          Sign in with GitHub
+        </button>
+      </div>
     </div>
   );
-};
-
-export default Login;
+}
