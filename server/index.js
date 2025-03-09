@@ -2,7 +2,7 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
-const executeCode = require("./utils/executeCode");
+const executeRoute = require("./routes/executeRoute");
 
 const app = express();
 const server = http.createServer(app);
@@ -15,6 +15,9 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.json());
+
+// Mount the execution route
+app.use("/api", executeRoute);
 
 const rooms = new Map(); // Stores active rooms and users
 
@@ -46,18 +49,6 @@ io.on("connection", (socket) => {
       }
     }
     console.log("🏠 Updated rooms:", rooms);
-  });
-});
-
-app.post("/run", (req, res) => {
-  const { code, language } = req.body;
-
-  if (!code || !language) {
-    return res.status(400).json({ output: "Missing code or language" });
-  }
-
-  executeCode(code, language, (output) => {
-    res.json({ output });
   });
 });
 
