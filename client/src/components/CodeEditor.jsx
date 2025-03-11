@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import { io } from "socket.io-client";
 import { useParams } from "react-router-dom";
@@ -10,15 +10,13 @@ export default function CodeEditor() {
   const [code, setCode] = useState("// Write your code here...");
   const [output, setOutput] = useState("");
   const [language, setLanguage] = useState("javascript");
+  const outputRef = useRef(null);
 
   useEffect(() => {
     socket.connect();
     socket.emit("joinRoom", roomId);
 
-    const handleCodeUpdate = (newCode) => {
-      setCode(newCode);
-    };
-
+    const handleCodeUpdate = (newCode) => setCode(newCode);
     socket.on("codeUpdate", handleCodeUpdate);
 
     return () => {
@@ -35,7 +33,7 @@ export default function CodeEditor() {
   const runCode = async () => {
     setOutput("Running...");
     try {
-      const response = await fetch("http://localhost:5000/run", {
+      const response = await fetch("http://localhost:5000/api/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, language }),
@@ -48,9 +46,14 @@ export default function CodeEditor() {
     }
   };
 
+  useEffect(() => {
+    if (outputRef.current) {
+      outputRef.current.scrollTop = outputRef.current.scrollHeight;
+    }
+  }, [output]);
+
   return (
     <div className="h-screen flex flex-col bg-gray-900 text-white">
-      {/* Navbar */}
       <nav className="flex items-center justify-between px-6 py-3 bg-gray-800 shadow-lg">
         <h1 className="text-xl font-bold text-blue-400">Online Compiler</h1>
         <div className="flex items-center space-x-4">
@@ -69,9 +72,7 @@ export default function CodeEditor() {
         </div>
       </nav>
 
-      {/* Main Container */}
       <div className="flex flex-1 p-4 space-x-4">
-        {/* Editor Section */}
         <div className="w-2/3 bg-gray-800 rounded-lg shadow-lg p-4">
           <Editor
             height="70vh"
@@ -79,11 +80,7 @@ export default function CodeEditor() {
             language={language}
             value={code}
             onChange={handleCodeChange}
-            options={{
-              fontSize: 14,
-              minimap: { enabled: false },
-              automaticLayout: true,
-            }}
+            options={{ fontSize: 14, minimap: { enabled: false }, automaticLayout: true }}
           />
           <button
             onClick={runCode}
@@ -93,10 +90,12 @@ export default function CodeEditor() {
           </button>
         </div>
 
-        {/* Output Section */}
         <div className="w-1/3 bg-gray-800 rounded-lg shadow-lg p-4 flex flex-col">
           <h2 className="text-lg font-semibold text-blue-400">Output:</h2>
-          <div className="flex-1 bg-black text-green-400 p-3 mt-2 rounded-md overflow-auto font-mono">
+          <div
+            ref={outputRef}
+            className="flex-1 bg-black text-green-400 p-3 mt-2 rounded-md overflow-auto font-mono"
+          >
             {output || "Output will be shown here..."}
           </div>
         </div>

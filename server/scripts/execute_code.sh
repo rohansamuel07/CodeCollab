@@ -3,6 +3,8 @@
 LANGUAGE=$1
 CODE_FILE=$2
 
+echo "Executing: $LANGUAGE - $CODE_FILE" >> /usr/src/app/logs.txt
+
 case "$LANGUAGE" in
   "c")
     gcc "$CODE_FILE" -o output && ./output
@@ -17,7 +19,7 @@ case "$LANGUAGE" in
     node "$CODE_FILE"
     ;;
   "java")
-    javac "$CODE_FILE" && java ${CODE_FILE%.*}
+    javac "$CODE_FILE" && java -cp $(dirname "$CODE_FILE") $(basename "$CODE_FILE" .java)
     ;;
   *)
     echo "Unsupported language"

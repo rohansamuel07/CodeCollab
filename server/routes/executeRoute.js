@@ -3,16 +3,18 @@ const executeCode = require("../utils/executeCode");
 
 const router = express.Router();
 
-router.post("/run", (req, res) => {
+router.post("/run", async (req, res) => {
   const { code, language } = req.body;
 
   if (!code || !language) {
     return res.status(400).json({ output: "Missing code or language" });
   }
 
-  executeCode(code, language, (output) => {
-    res.json({ output });
-  });
+  try {
+    executeCode(code, language, (output) => res.json({ output }));
+  } catch (error) {
+    res.status(500).json({ output: "Server error while executing code" });
+  }
 });
 
 module.exports = router;
