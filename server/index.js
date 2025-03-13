@@ -1,8 +1,10 @@
+require("dotenv").config();
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
 const executeRoute = require("./routes/executeRoute");
+const debugAIRoutes = require("./routes/debugAI");
 
 const app = express();
 const server = http.createServer(app);
@@ -13,12 +15,22 @@ const io = new Server(server, {
   },
 });
 
+// ✅ Check if Hugging Face API Key is available
+if (!process.env.HF_API_KEY) {
+  console.error("❌ Error: HF_API_KEY is missing. Check your .env file.");
+  process.exit(1);
+} else {
+  console.log("✅ Hugging Face API Key Loaded:", process.env.HF_API_KEY.slice(0, 6) + "*****");
+}
+
 app.use(cors());
 app.use(express.json());
 
-// Ensure correct API route
+// ✅ Define API Routes
 app.use("/api", executeRoute);
+app.use("/api/debug-ai", debugAIRoutes);
 
+// ✅ Real-Time Collaboration
 const rooms = new Map();
 
 io.on("connection", (socket) => {
@@ -44,4 +56,5 @@ io.on("connection", (socket) => {
   });
 });
 
+// ✅ Start Server
 server.listen(5000, () => console.log("🚀 Server running on port 5000"));
