@@ -1,104 +1,43 @@
-/*
+// executeCode.js
 const { exec } = require("child_process");
 const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
 
-const executeCode = (code, language, callback) => {
-  let command;
-
-  switch (language) {
-    case "javascript":
-      command = `node -e "${code.replace(/"/g, '\\"')}"`;
-      break;
-
-    case "python":
-      fs.writeFileSync("temp.py", code);
-      command = `python3 temp.py`;
-      break;
-
-    case "c":
-      fs.writeFileSync("temp.c", code);
-      command = `gcc temp.c -o temp.out && ./temp.out`;
-      break;
-
-    case "cpp":
-      fs.writeFileSync("temp.cpp", code);
-      command = `g++ temp.cpp -o temp.out && ./temp.out`;
-      break;
-
-    case "java":
-      fs.writeFileSync("Test.java", code);
-      command = `javac Test.java && java Test`;
-      break;
-
-    default:
-      return callback("Unsupported language");
+const executeCode = (code, language, input, callback) => {
+  const tempDir = path.join(__dirname, "../scripts/temp");
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
   }
 
-  exec(command, (error, stdout, stderr) => {
-    if (error || stderr) {
-      callback(error ? error.message : stderr);
-    } else {
-      callback(stdout);
-    }
-  });
-};
+  const fileExtension = {
+    c: "c",
+    cpp: "cpp",
+    python: "py",
+    javascript: "js",
+    java: "java",
+  }[language];
 
-module.exports = executeCode;
-*/
-
-const { exec } = require("child_process");
-const fs = require("fs");
-
-const executeCode = (code, language, callback) => {
-  let command;
-  let fileName;
-  let outputFiles = [];
-
-  switch (language) {
-    case "javascript":
-      command = `timeout 5s node -e "${code.replace(/"/g, '\\"')}"`;
-      break;
-
-    case "python":
-      fileName = "temp.py";
-      fs.writeFileSync(fileName, code);
-      command = `timeout 5s python3 ${fileName}`;
-      outputFiles.push(fileName);
-      break;
-
-    case "c":
-      fileName = "temp.c";
-      fs.writeFileSync(fileName, code);
-      command = `gcc ${fileName} -o temp.out && timeout 5s ./temp.out`;
-      outputFiles.push(fileName, "temp.out");
-      break;
-
-    case "cpp":
-      fileName = "temp.cpp";
-      fs.writeFileSync(fileName, code);
-      command = `g++ ${fileName} -o temp.out && timeout 5s ./temp.out`;
-      outputFiles.push(fileName, "temp.out");
-      break;
-
-    case "java":
-      const match = code.match(/public\s+class\s+(\w+)/);
-      if (!match) return callback("❌ Java class name not found!");
-
-      fileName = `${match[1]}.java`;
-      fs.writeFileSync(fileName, code);
-      command = `javac ${fileName} && timeout 5s java ${match[1]}`;
-      outputFiles.push(fileName, `${match[1]}.class`);
-      break;
-
-    default:
-      return callback("❌ Unsupported language");
+  if (!fileExtension) {
+    return callback("Unsupported language");
   }
+
+  const uniqueId = crypto.randomUUID();
+  const codeFilePath = path.join(tempDir, `temp_${uniqueId}.${fileExtension}`);
+  const inputFilePath = path.join(tempDir, `input_${uniqueId}.txt`);
+
+  fs.writeFileSync(codeFilePath, code);
+  fs.writeFileSync(inputFilePath, input || ""); // Save input to file
+
+  const command = `bash ${path.join(__dirname, "../scripts/execute_code.sh")} ${language} ${codeFilePath} ${inputFilePath}`;
 
   exec(command, { timeout: 5000 }, (error, stdout, stderr) => {
-    outputFiles.forEach((file) => fs.unlinkSync(file, { force: true }));
+    fs.unlinkSync(codeFilePath);
+    fs.unlinkSync(inputFilePath);
 
-    if (error) return callback(`⚠ Error: ${error.message}`);
-    if (stderr) return callback(`⚠ Stderr: ${stderr}`);
+    if (error) {
+      return callback(stderr || "Execution error");
+    }
     callback(stdout);
   });
 };

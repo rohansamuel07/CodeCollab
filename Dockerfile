@@ -12,11 +12,11 @@ RUN apt update && apt install -y \
 # Set default working directory
 WORKDIR /usr/src/app
 
-# Copy package.json & package-lock.json (ensures npm install works)
+# Copy package.json & package-lock.json
 COPY server/package.json server/package-lock.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install --unsafe-perm
 
 # Copy the rest of the server code
 COPY server/ .
@@ -24,5 +24,8 @@ COPY server/ .
 # Set execution permissions
 RUN chmod -R 777 /usr/src/app
 
-# Default command (will be overridden)
-CMD ["/bin/bash"]
+# Expose the port
+EXPOSE 5000
+
+# Start the server
+CMD ["node", "index.js"]
